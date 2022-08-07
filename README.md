@@ -1,3 +1,6 @@
-# HexString
+[![Swift](https://github.com/nixberg/hexstring-swift/actions/workflows/swift.yml/badge.svg)](
+https://github.com/nixberg/hexstring-swift/actions/workflows/swift.yml)
 
-A description of this package.
+# hexstring-swift
+
+Swift utilities for working with hex strings.
