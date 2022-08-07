@@ -1,48 +1,36 @@
 import Algorithms
 
+extension Array where Element == UInt8 {
+    public init?<S>(hexString: S) where S: StringProtocol {
+        self = []
+        for chunk in hexString.lazy.filter({ !$0.isWhitespace }).chunks(ofCount: 2) {
+            guard let high = chunk.first?.strictHexDigitValue,
+                  let low = chunk.dropFirst().first?.strictHexDigitValue else {
+                return nil
+            }
+            self.append(.init(nibbles: (high, low)))
+        }
+    }
+}
+
+extension Sequence where Element == UInt8 {
+    public func hexString() -> String {
+        .init(self.lazy.map(\.nibbles).flatMap({ [$0.high.hexDigit, $0.low.hexDigit] }))
+    }
+}
+
 @propertyWrapper
 public struct HexString: Decodable {
     public let wrappedValue: [UInt8]
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        
-        let strippedHexString = try container.decode(String.self).filter { !$0.isWhitespace }
-        
-        guard strippedHexString.count.isMultiple(of: 2) else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "")
+        guard let wrappedValue = [UInt8](hexString: try container.decode(String.self)) else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "TODO"
+            )
         }
-        
-        wrappedValue = strippedHexString
-            .chunks(ofCount: 2)
-            .compactMap { UInt8($0, radix: 16) }
-        
-        guard wrappedValue.count == strippedHexString.count / 2 else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "")
-        }
+        self.wrappedValue = wrappedValue
     }
-}
-
-extension Array: ExpressibleByStringLiteral where Element == UInt8 {
-    public typealias StringLiteralType = String
-    
-    public init(stringLiteral hexString: StringLiteralType) {
-        let strippedHexString = hexString.filter { !$0.isWhitespace }
-        
-        precondition(strippedHexString.count.isMultiple(of: 2))
-        
-        self = strippedHexString
-            .chunks(ofCount: 2)
-            .compactMap { UInt8($0, radix: 16) }
-        
-        precondition(count == strippedHexString.count / 2)
-    }
-}
-
-extension Array: ExpressibleByUnicodeScalarLiteral where Element == UInt8 {
-    public typealias UnicodeScalarLiteralType = String
-}
-
-extension Array: ExpressibleByExtendedGraphemeClusterLiteral where Element == UInt8 {
-    public typealias ExtendedGraphemeClusterLiteralType = String
 }
